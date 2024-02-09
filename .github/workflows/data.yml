@@ -18,7 +18,7 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo,
             state: 'closed',
-            base: 'main' // or whatever your base branch is
+            base: 'master'
           });
           const mergedPRs = response.data.filter(pr => pr.merged_at);
           const prList = mergedPRs.map(pr => `- ${pr.title} (#${pr.number}) by ${pr.user.login}: ${pr.html_url}`).join('\n');
