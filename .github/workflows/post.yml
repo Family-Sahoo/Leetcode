@@ -1,0 +1,16 @@
+name: Trigger Post Merged PRs to Slack
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  trigger-post-merged-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Post Merged PRs to Slack
+        uses: ./.github/workflows/data.yml
+        with:
+          slack_channel: '#random'
