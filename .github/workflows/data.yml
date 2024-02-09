@@ -8,11 +8,6 @@ jobs:
   post-merged-prs:
     runs-on: ubuntu-latest
     
-    inputs:
-      slack_channel:
-        description: 'The Slack channel where the message will be posted'
-        required: true
-
     steps:
     - name: Get Merged PRs
       id: get_prs
@@ -33,7 +28,7 @@ jobs:
     - name: Post to Slack
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        SLACK_CHANNEL: ${{ github.event.inputs.slack_channel }}
+        SLACK_CHANNEL: '#random' 
       run: |
         PR_LIST=$(echo "${{ steps.get_prs.outputs.merged_pr_list }}")
         JSON="{\"text\": \"Merged Pull Requests:\n$PR_LIST\", \"channel\": \"$SLACK_CHANNEL\"}"
