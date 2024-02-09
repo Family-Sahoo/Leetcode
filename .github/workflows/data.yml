@@ -28,7 +28,7 @@ jobs:
     - name: Post to Slack
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        SLACK_CHANNEL: '#random' 
+        SLACK_CHANNEL: '#test' 
       run: |
         PR_LIST=$(echo "${{ steps.get_prs.outputs.merged_pr_list }}")
         JSON="{\"text\": \"Merged Pull Requests:\n$PR_LIST\", \"channel\": \"$SLACK_CHANNEL\"}"
