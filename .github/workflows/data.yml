@@ -23,9 +23,13 @@ jobs:
             per_page: 1
           });
           const mergedPRs = response.data.filter(pr => pr.merged_at);
-          const prList = mergedPRs.map(pr => `- ${pr.title} (#${pr.number}) by ${pr.user.login}: ${pr.html_url}`).join('\n');
-          console.log(prList);
-          core.setOutput('merged_pr_list', prList);
+          if (mergedPRs.length > 0) {
+            const prList = mergedPRs.map(pr => `- ${pr.title} (#${pr.number}) by ${pr.user.login}: ${pr.html_url}`).join('\n');
+            console.log(prList);
+            core.setOutput('merged_pr_list', prList);
+          } else {
+            core.setOutput('merged_pr_list', ''); // If no merged PRs found, set output to empty string
+          }
 
     - name: Post to Slack
       if: steps.get_prs.outputs.merged_pr_list != '' # Only run if there are merged PRs
