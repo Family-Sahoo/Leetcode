@@ -46,7 +46,6 @@ jobs:
           IFS=', ' read -r -a machines <<< "${CANARY_MACHINES}"
           for machine in "${machines[@]}"; do
             echo "$machine"
-            # Run your tests on $machine
           done
 
       - name: Post Test Results to PR
