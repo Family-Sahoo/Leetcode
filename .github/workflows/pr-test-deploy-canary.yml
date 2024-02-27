@@ -3,7 +3,8 @@ name: PR Test, Deploy and Canary Test
 on:
   pull_request_review:
     types: [submitted]
-    branches: [master]
+    branches: 
+      - master
 
 jobs:
   test-on-pr-approval:
