@@ -1,14 +1,14 @@
 name: PR Test, Deploy and Canary Test
 
 on:
-  pull_request_review:
-    types: [submitted]
+  pull_request:
+    types: [opened, synchronize, reopened]
     branches: 
-      - master
+      - 'master' # Adjust this to include the branches where you want this workflow to run
 
 jobs:
   test-on-pr-approval:
-    if: github.event.review.state == 'approved'
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,6 +21,7 @@ jobs:
           # For example, using salt-ssh or another tool to execute your tests
 
   deploy-and-test-canary:
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
     needs: test-on-pr-approval
     runs-on: ubuntu-latest
     steps:
@@ -56,4 +57,3 @@ jobs:
               repo: context.repo.repo,
               body: message,
             })
-
