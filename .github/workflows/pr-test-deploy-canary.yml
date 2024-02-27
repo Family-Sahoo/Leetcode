@@ -27,13 +27,41 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Deploy to Canary Machines
-        env:
-          CANARY_MACHINES: ${{ secrets.CANARY_MACHINES }}
+      - name: Checkout PR
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Retrieve PR Content
         run: |
-          echo "Deploying to canary machines: $CANARY_MACHINES"
-          # Replace this with your deployment command, e.g., salt-ssh
-          # Ensure you parse CANARY_MACHINES if it's a list
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > pr_files.txt
+          cat pr_files.txt
+
+      - name: Install Teleport SSH client (tsh)
+        run: |
+          wget https://github.com/gravitational/teleport/releases/latest/download/teleport-v7.2.10-linux-amd64-bin.tar.gz
+          tar xzf teleport-v7.2.10-linux-amd64-bin.tar.gz
+          sudo mv teleport /usr/local/bin/tsh
+        shell: bash
+
+      - name: Login to teleport Server
+        run: |
+          tsh login --proxy teleport.netskope.io
+        env:
+          TELEPORT_USERNAME: ${{ secrets.TELEPORT_USERNAME }}
+          TELEPORT_PASSWORD: ${{ secrets.TELEPORT_PASSWORD }}
+
+      - name: Run Blast Radius Check
+        id: check_blast_radius
+        run: |
+          set -x
+          # ... previous python checks ...
+          output=$(python check_blast_radius.py --debug)
+          affected_states=$(echo "$output" | jq -r '.affected_states[]')
+          echo "AFFECTED_STATES=$affected_states" >> $GITHUB_ENV
+        shell: bash
+        env:
+          TOP_SLS: ${{ env.RENDERED_TOP_SLS }}
       
       - name: Debug Environment Variables
         run: env    
@@ -42,10 +70,23 @@ jobs:
         env:
           CANARY_MACHINES: ${{ secrets.CANARY_MACHINES }}
         run: |
-          echo "Running tests on canary machines: ...."
+          echo "Running tests on canary machines:"
           IFS=', ' read -r -a machines <<< "${CANARY_MACHINES}"
-          for machine in "${machines[@]}"; do
-            echo "$machine"
+          for hostname_fqdn in "${machines[@]}"; do
+              clustername=$(echo "$hostname_fqdn" | awk -F. '{print $2}')
+              
+              echo "Accessing $hostname_fqdn on cluster $clustername"
+              
+              # Use tsh ssh with extracted clustername and hostname
+              tsh ssh -c "$clustername" "$hostname_fqdn" -- "echo 'Running tests on $hostname_fqdn' && salt-call state.apply $AFFECTED_STATES"
+
+              # Check the execution status and handle errors if necessary
+              if [ $? -ne 0 ]; then
+                  echo "Tests failed on $fullname" >&2
+                  exit 1
+              else
+                  echo "Tests passed on $fullname"
+              fi
           done
 
       - name: Post Test Results to PR
