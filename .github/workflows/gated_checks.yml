@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      
+    # Add your build/test steps here
+    
+    - name: Set status check
+      if: always()
+      uses: actions/github-script@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const { data: pulls } = await github.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            head: `${context.repo.owner}:${context.sha}`
+          });
+          
+          if (pulls.length > 0) {
+            await github.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'CI Check',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: '${{ job.status }}',
+              output: {
+                title: 'CI Check',
+                summary: 'Your CI checks have completed.'
+              }
+            });
+          }
