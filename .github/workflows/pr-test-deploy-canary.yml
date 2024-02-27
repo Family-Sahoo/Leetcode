@@ -1,13 +1,13 @@
-name: PR Test, Deploy and Canary Test
+name: Canary Test
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: 
-      - 'master' # Adjust this to include the branches where you want this workflow to run
+      - 'master'
 
 jobs:
-  test-on-pr-approval:
+  canary_test-on-pr:
     if: github.event_name == 'pull_request' && github.event.action == 'opened'
     runs-on: ubuntu-latest
     steps:
@@ -15,14 +15,11 @@ jobs:
 
       - name: Test on Test Machines
         run: |
-          echo "Running tests on test machines..."
-      
-          # Insert your command to run tests on the test machines
-          # For example, using salt-ssh or another tool to execute your tests
+          echo "Running tests on canary machines..."
 
   deploy-and-test-canary:
     if: github.event_name == 'pull_request' && github.event.action == 'opened'
-    needs: test-on-pr-approval
+    needs: canary_test-on-pr
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -77,17 +74,24 @@ jobs:
               
               echo "Accessing $hostname_fqdn on cluster $clustername"
               
-              # Use tsh ssh with extracted clustername and hostname
-              tsh ssh -c "$clustername" "$hostname_fqdn" -- "echo 'Running tests on $hostname_fqdn' && salt-call state.apply $AFFECTED_STATES"
-
-              # Check the execution status and handle errors if necessary
-              if [ $? -ne 0 ]; then
-                  echo "Tests failed on $fullname" >&2
-                  exit 1
-              else
-                  echo "Tests passed on $fullname"
-              fi
+              # Loop through each affected state and run tests against it
+              for state in $AFFECTED_STATES; do
+                echo "Running tests for state: $state on $hostname_fqdn"
+                
+                # Use tsh ssh with extracted clustername and hostname
+                output=$(tsh ssh -c "$clustername" "$hostname_fqdn" -- "salt-call state.apply $state")
+      
+                # Check the execution status and handle errors if necessary
+                if [ $? -ne 0 ]; then
+                    echo "Tests failed for state: $state on $fullname" >&2
+                    echo "$output" >&2
+                    exit 1
+                else
+                    echo "Tests passed for state: $state on $fullname"
+                fi
+              done
           done
+
 
       - name: Post Test Results to PR
         uses: actions/github-script@v5
