@@ -34,6 +34,9 @@ jobs:
           echo "Deploying to canary machines: $CANARY_MACHINES"
           # Replace this with your deployment command, e.g., salt-ssh
           # Ensure you parse CANARY_MACHINES if it's a list
+      
+      - name: Debug Environment Variables
+        run: env    
 
       - name: Run Tests on Canary Machines
         env:
