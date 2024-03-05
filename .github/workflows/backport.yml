@@ -11,9 +11,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Backport to npe branch
+      - name: Determine Target Branch
+        id: target_branch
+        run: |
+          echo "Determining target branch..."
+          echo "TARGET_BRANCH=new1" >> $GITHUB_ENV
+      - name: Backport to Determined Branch
         uses: tibdex/backport@v1
         with:
           github_token: ${{ secrets.MY_PAT }}
-          target_branch_prefix: "new1"
-          pull_request_labels: "backport"
+          title_template: "[Backport {{base}}] {{originalTitle}}"
+        env:
+          TARGET_BRANCH: ${{ env.TARGET_BRANCH }}
