@@ -15,5 +15,5 @@ jobs:
         uses: tibdex/backport@v1
         with:
           github_token: ${{ secrets.MY_PAT }}
-          target_branch_prefix: "2"
+          target_branch_prefix: "new1"
           pull_request_labels: "backport"
