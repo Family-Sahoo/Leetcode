@@ -21,3 +21,23 @@ jobs:
       - uses: tibdex/backport@v2
         with:
           github_token: ${{ secrets.MY_PAT }}
+          
+      - name: Find Backport PR URL
+        id: find_pr
+        run: |
+          ORIGINAL_PR_NUMBER=${{ github.event.pull_request.number }}
+          TARGET_BRANCH="new1" # Adjust this line as needed to dynamically determine the target branch.
+          HEAD_BRANCH="backport-${ORIGINAL_PR_NUMBER}-to-${TARGET_BRANCH}"
+          PR_URL=$(gh pr list --head "$HEAD_BRANCH" --repo ${{ github.repository }} --json url --jq '.[0].url')
+          echo "PR_URL=$PR_URL" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Comment on Original PR with Backport PR Link
+        if: env.PR_URL != ''
+        uses: peter-evans/create-update-comment@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: Backported changes are available in this PR: ${{ env.PR_URL }}    
+    
