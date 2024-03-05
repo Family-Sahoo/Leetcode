@@ -9,17 +9,30 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'backport')
     steps:
-      - name: Checkout code
+      - name: Checkout the repository
         uses: actions/checkout@v2
-      - name: Determine Target Branch
-        id: target_branch
+      
+      - name: Setup GitHub CLI
         run: |
-          echo "Determining target branch..."
-          echo "TARGET_BRANCH=new1" >> $GITHUB_ENV
-      - name: Backport to Determined Branch
-        uses: tibdex/backport@v1
-        with:
-          github_token: ${{ secrets.MY_PAT }}
-          title_template: "[Backport {{base}}] {{originalTitle}}"
+          sudo apt update
+          sudo apt install -y gh
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+      
+      - name: Cherry-pick commit and create PR
         env:
-          TARGET_BRANCH: ${{ env.TARGET_BRANCH }}
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+        run: |
+          # Assuming you want to backport to branch "new1"
+          git fetch origin
+          git checkout -b backport-branch-name origin/new1
+          git cherry-pick YOUR_COMMIT_SHA_HERE
+          
+          # Push backport branch
+          git push origin backport-branch-name
+          
+          # Create pull request
+          gh pr create --base new1 --head backport-branch-name --title "Backport PR Title" --body "Backport PR description"
