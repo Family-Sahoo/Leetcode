@@ -9,9 +9,6 @@ jobs:
   backport:
     name: Backport
     runs-on: ubuntu-latest
-    # Only react to merged PRs for security reasons.
-    # See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target.
-    if: >
       github.event.pull_request.merged
       && (
         github.event.action == 'closed'
@@ -23,4 +20,4 @@ jobs:
     steps:
       - uses: tibdex/backport@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.MY_PAT }}
