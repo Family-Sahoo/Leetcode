@@ -1,38 +1,24 @@
-name: Backport
+name: Automatic backport action
 
 on:
-  pull_request:
-    types: [closed]
+  pull_request_target:
+    types: ["labeled", "closed"]
 
 jobs:
   backport:
+    name: Backport PR
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'backport')
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v2
-      
-      - name: Setup GitHub CLI
-        run: |
-          sudo apt update
-          sudo apt install -y gh
-      
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-      
-      - name: Cherry-pick commit and create PR
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
-        run: |
-          # Assuming you want to backport to branch "new1"
-          git fetch origin
-          git checkout -b backport-branch-name origin/new1
-          git cherry-pick YOUR_COMMIT_SHA_HERE
-          
-          # Push backport branch
-          git push origin backport-branch-name
-          
-          # Create pull request
-          gh pr create --base new1 --head backport-branch-name --title "Backport PR Title" --body "Backport PR description"
+      - name: Backport Action
+        uses: sorenlouv/backport-github-action@v9.3.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          auto_backport_label_prefix: backport-to-new1
+
+      - name: Info log
+        if: ${{ success() }}
+        run: cat ~/.backport/backport.info.log
+        
+      - name: Debug log
+        if: ${{ failure() }}
+        run: cat ~/.backport/backport.debug.log
