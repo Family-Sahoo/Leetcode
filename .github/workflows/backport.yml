@@ -31,13 +31,13 @@ jobs:
           PR_URL=$(gh pr list --head "$HEAD_BRANCH" --repo ${{ github.repository }} --json url --jq '.[0].url')
           echo "PR_URL=$PR_URL" >> $GITHUB_ENV
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
           
       - name: Comment on Original PR with Backport PR Link
         if: env.PR_URL != ''
         uses: peter-evans/create-update-comment@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MY_PAT }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: Backported changes are available in this PR: ${{ env.PR_URL }}    
-    
+          body: |
+            Backported changes are available in this PR: ${{ env.PR_URL }}
